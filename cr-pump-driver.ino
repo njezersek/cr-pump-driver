@@ -34,35 +34,69 @@ void setup(){
 	enable();
 	enableReceive();
 
-	delay(100);
-	read();
-	delay(100);
+	// delay(100);
+	// read();
+	// delay(100);
 
-	Serial.println("start");
-	enableTransmit();
-	setUShortReg(PUMP_START_STOP, 1);
-	enableReceive();
+	// Serial.println("start");
+	// enableTransmit();
+	// setUShortReg(PUMP_START_STOP, 1);
+	// enableReceive();
 
-	delay(100);
-	read();
-	delay(100);
+	// delay(100);
+	// read();
+	// delay(100);
 
-	delay(3000);
+	// delay(3000);
 
-	Serial.println("stop");
-	enableTransmit();
-	setUShortReg(PUMP_START_STOP, 0);
-	enableReceive();
+	// Serial.println("stop");
+	// enableTransmit();
+	// setUShortReg(PUMP_START_STOP, 0);
+	// enableReceive();
 
-	delay(100);
-	read();
-	delay(100);
+	// delay(100);
+	// read();
+	// delay(100);
 
-	while(true){}
+	// while(true){}
 } 
  
 void loop() 
 { 
+	bool ok = false;
+	int speed;
+	if(Serial.available()){
+		speed = Serial.parseInt();
+
+		while(Serial.available()){
+			Serial.read();
+		}
+		ok = true;
+	}
+	if(ok){
+		Serial.print("speed: ");
+		Serial.println(speed);
+
+
+		if(speed == 0){
+			enableTransmit();
+			setUShortReg(PUMP_START_STOP, 0);
+			enableReceive();
+		}
+		else if(speed == -1){
+			enableTransmit();
+			setUShortReg(PUMP_START_STOP, 1);
+			enableReceive();
+		}
+		else{
+			enableTransmit();
+			setFloatReg(PUMP_FLOW_RATE, (float) speed);
+			enableReceive();
+		}
+
+	}
+
+
 	// read output from the pump and print it to debug console
 	bool received = false;
 	while(softwareSerial.available()){  

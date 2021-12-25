@@ -14,7 +14,7 @@
 #define PUMP_STOP_TIME 3
 #define PUMP_FILLING_TIME 5
 #define PUMP_FILLING_FREQUENCY 7 // ushort
-#define PUMP_FLOw_RATE 8
+#define PUMP_FLOW_RATE 8
 #define PUMP_HEAD 10 // ushort, read only
 #define PUMP_TUBE 11 // ushort, read only
 #define PUMP_MODE 12 // ushort, read only
