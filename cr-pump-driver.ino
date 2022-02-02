@@ -15,7 +15,7 @@ void setup(){
 	pinMode(PEDAL_PIN, INPUT_PULLUP);
 
 	digitalWrite(MCP4921_CS_PIN, HIGH);
-	//SPI.begin();
+	SPI.begin();
 
 	Serial.begin(9600);
 
@@ -33,6 +33,19 @@ unsigned long last_tick = 0;
 float samples[3];
 int sample_index = 0;
 
+#define PEDAL_THRESHOLD 100
+#define TARGET_WEIGHT 200
+#define MAX_FLOW 500.0
+
+unsigned long last_pedal_press = 0;
+bool pedal_state = false;
+bool pedal_state_filtered = false;
+bool filling_state = false;
+
+float ramp_up = 0.;
+
+float median = 0;
+
 void loop(){
 	// read the scale
 	if(scale.is_ready()){
@@ -44,7 +57,6 @@ void loop(){
 		}
 
 
-		float median = s;
 		if((samples[1] <= samples[0] && samples[0] <= samples[2]) || (samples[2] <= samples[0] && samples[0] <= samples[1]) ){
 			median = samples[0];
 		}
@@ -61,11 +73,11 @@ void loop(){
 
 		unsigned long t = micros();
 		// Serial.print("\t"); Serial.print(s);
-		Serial.print("\t");	Serial.print(0);
-		Serial.print("\t");	Serial.print(300);
-		Serial.print("\t");	Serial.print(median);
+		// Serial.print("\t");	Serial.print(0);
+		// Serial.print("\t");	Serial.print(300);
+		// Serial.print("\t");	Serial.print(median);
 		// Serial.print("\t"); Serial.print((t-last_tick)/1000.0f);
-		Serial.println();
+		// Serial.println();
 		last_tick = t;
 		// s = (s-300)/(460-300); // 300 - 460
 		// if(s <= 0.0f) s = 0.0f;
@@ -76,10 +88,52 @@ void loop(){
 	// read pedal value
 	float v = (1.0+sin((float) micros() / 200000.0))/2. * 4096;
 	uint16_t value = (uint16_t) v;
-	if(digitalRead(PEDAL_PIN)){
-		// value = 0;
+
+	if(!digitalRead(PEDAL_PIN)){
+		if(pedal_state == false){
+			last_pedal_press = millis();
+		}
+		pedal_state = true;
+		if(millis() - last_pedal_press > PEDAL_THRESHOLD){
+			if(pedal_state_filtered == false){
+				ramp_up = 0;
+				filling_state = true;
+				Serial.println("FILL!");
+			}
+			pedal_state_filtered = true;
+		}
+		else{
+			pedal_state_filtered = false;
+		}
+	}
+	else{
+		pedal_state = false;
 	}
 
-	mcp4921(4000);
+	if(filling_state && median < TARGET_WEIGHT){
+		digitalWrite(PUMP_START_PIN, HIGH);
+		ramp_up += 0.01;
+		if(ramp_up > 1) ramp_up = 1;
+		float f = ramp_up - (median/(float)TARGET_WEIGHT);
+		if(f < 0) f = 0;
+		if(f > 1) f = 1;
+		Serial.println(f);
+		// mcp4921((uint16_t)(f*(float)MAX_FLOW));
+	}
+	else{
+		digitalWrite(PUMP_START_PIN, LOW);
+		// mcp4921(0);
+		if(filling_state){
+			Serial.print("Allocated ");
+			Serial.print(scale.get_units(30));
+			Serial.print("g ");
+			Serial.println();
+		}
+		filling_state = false;
+	}
+	mcp4921(0);
+
+
+
 
 }
