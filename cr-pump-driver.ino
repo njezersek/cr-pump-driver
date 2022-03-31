@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include <U8g2lib.h>
 #include <TimerOne.h>
 #include "debounce.h"
+#include "MenuController.h"
 
 #ifdef U8X8_HAVE_HW_SPI
 #include <SPI.h>
@@ -19,12 +19,7 @@
 DebounceInput encoder_A(ENCODER_A_PIN);
 DebounceInput encoder_B(ENCODER_B_PIN);
 
-// 128x64 LCD
 
-#define CLK 13
-#define RS 12
-#define RW 11
-U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, CLK, RW, RS );
 
 void setup(void) {
 	encoder_A.setup();
@@ -48,8 +43,8 @@ void update(){
 	encoder_B.update();
 
 	if(encoder_A.state && !encoder_A.last_state){
-		if(encoder_B.state) item = ++item % 4;
-		else item = --item % 4;
+		if(encoder_B.state) menuController.onEncoderRotate(1);
+		else menuController.onEncoderRotate(-1);
 	}
 
 	// Serial.println(val++);
@@ -59,27 +54,7 @@ void update(){
 
 char c_buffer[10];
 
+// display rendering
 void loop(void) {
-	u8g2.clearBuffer();
-	u8g2.setCursor(48,30);
-	sprintf(c_buffer, "%5d", val);
-	u8g2.setFont(u8g2_font_logisoso20_tn);
-	u8g2.print(c_buffer);
-	u8g2.setFont(u8g2_font_logisoso16_tr);
-	u8g2.print("g");
-	u8g2.setFont(u8g2_font_tinytim_tf);
-	u8g2.setFontMode(1);
-	for(int i=0; i<4; i++){
-		u8g2.setDrawColor(1);
-		u8g2.drawFrame(i*34, 40, 35, 24);
-		if(item == i){
-			u8g2.drawBox(i*34, 40, 35, 24);
-		}
-		u8g2.setDrawColor(2);
-		u8g2.setCursor(i*34+3, 48);
-		u8g2.print("WEIGHT");
-		u8g2.setCursor(i*34+3, 48+8);
-		u8g2.print(1234);
-	}
-	u8g2.sendBuffer();
+	menuController.render();
 }
