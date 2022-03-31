@@ -1,6 +1,6 @@
 {
-    "board": "arduino:avr:uno",
+    "board": "arduino:avr:micro",
     "programmer": "arduinoisp",
     "sketch": "cr-pump-driver.ino",
-    "port": "COM3"
+    "port": "COM7"
 }

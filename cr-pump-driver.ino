@@ -1,81 +1,85 @@
-#include "pinout.h"
-#include "mc4921.h"
-#include "scale.h"
+#include <Arduino.h>
+#include <U8g2lib.h>
+#include <TimerOne.h>
+#include "debounce.h"
 
+#ifdef U8X8_HAVE_HW_SPI
+#include <SPI.h>
+#endif
+#ifdef U8X8_HAVE_HW_I2C
+#include <Wire.h>
+#endif
 
-void setup(){
-	pinMode(PUMP_START_PIN, OUTPUT);
-	pinMode(PUMP_DIRECTION_PIN, OUTPUT);
-	pinMode(PEDAL_PIN, INPUT_PULLUP);
+// Rotary encoder
 
-	digitalWrite(PUMP_START_PIN, LOW);
-	digitalWrite(PUMP_DIRECTION_PIN, LOW);
+#define ENCODER_A_PIN 2
+#define ENCODER_B_PIN 3
+#define BUTTON_PIN 4
 
-	SPI.begin();
+DebounceInput encoder_A(ENCODER_A_PIN);
+DebounceInput encoder_B(ENCODER_B_PIN);
 
+// 128x64 LCD
+
+#define CLK 13
+#define RS 12
+#define RW 11
+U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, CLK, RW, RS );
+
+void setup(void) {
+	encoder_A.setup();
+	encoder_B.setup();
+	pinMode(BUTTON_PIN, INPUT_PULLUP);
+	
 	Serial.begin(9600);
 
-	Scale::init();
+	Timer1.initialize(1000);
+	Timer1.attachInterrupt(update);
+
+	u8g2.begin();
 }
 
+long val = 4350;
+uint8_t item = 0;
 
-#define TARGET_WEIGHT 200
-#define STOPPING_WEIGHT 150
-#define MAX_FLOW 1000
-#define DRIP_WEIGHT 25
+void update(){
+	// read input state
+	encoder_A.update();
+	encoder_B.update();
 
-unsigned long filling_start_time = 0;
-bool filling_state = false;
-
-float ramp_up = 0;
-float pump_speed = 0;
-
-void loop(){
-
-	// read the scale
-	float weight = Scale::read();
-
-	if(filling_state){ // filling state
-
-		if(millis() - filling_start_time > 100){ // increase speed after 100ms
-			ramp_up += 0.01;
-			if(ramp_up > 1) ramp_up = 1;
-			float f = ramp_up - max(0, max(0, weight-TARGET_WEIGHT+STOPPING_WEIGHT)/STOPPING_WEIGHT);
-			// float f = ramp_up - (weight/(float)TARGET_WEIGHT);
-			if(f < 0) f = 0;
-			if(f > 1) f = 1;
-			Serial.println(f);
-			pump_speed = f * (float)MAX_FLOW;
-		}
-
-		if(weight >= TARGET_WEIGHT - DRIP_WEIGHT){
-			filling_state = false;
-
-			digitalWrite(PUMP_START_PIN, LOW);
-
-			Serial.print("Allocated ");
-			Serial.print((millis() - filling_start_time) / 1000.0);
-			Serial.print("s ");
-			Serial.print(weight);
-			Serial.print("g ");
-			Serial.println();
-
-			for(int i=0; i<10; i++){
-				Serial.print(Scale::scale.get_units(20));
-				Serial.print("g ");
-				Serial.println();
-			}
-		}
-	}
-	else{ // idle state
-		// read pedal value
-		if(!digitalRead(PEDAL_PIN)){
-			Scale::scale.tare();
-			filling_state = true;
-			filling_start_time = millis();
-		}
+	if(encoder_A.state && !encoder_A.last_state){
+		if(encoder_B.state) item = ++item % 4;
+		else item = --item % 4;
 	}
 
-	digitalWrite(PUMP_START_PIN, filling_state);
-	mcp4921((uint16_t) pump_speed);
+	// Serial.println(val++);
+
+	if(val > 1000000) val = 0;
+}
+
+char c_buffer[10];
+
+void loop(void) {
+	u8g2.clearBuffer();
+	u8g2.setCursor(48,30);
+	sprintf(c_buffer, "%5d", val);
+	u8g2.setFont(u8g2_font_logisoso20_tn);
+	u8g2.print(c_buffer);
+	u8g2.setFont(u8g2_font_logisoso16_tr);
+	u8g2.print("g");
+	u8g2.setFont(u8g2_font_tinytim_tf);
+	u8g2.setFontMode(1);
+	for(int i=0; i<4; i++){
+		u8g2.setDrawColor(1);
+		u8g2.drawFrame(i*34, 40, 35, 24);
+		if(item == i){
+			u8g2.drawBox(i*34, 40, 35, 24);
+		}
+		u8g2.setDrawColor(2);
+		u8g2.setCursor(i*34+3, 48);
+		u8g2.print("WEIGHT");
+		u8g2.setCursor(i*34+3, 48+8);
+		u8g2.print(1234);
+	}
+	u8g2.sendBuffer();
 }
