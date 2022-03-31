@@ -18,6 +18,7 @@
 
 DebounceInput encoder_A(ENCODER_A_PIN);
 DebounceInput encoder_B(ENCODER_B_PIN);
+DebounceInput button(BUTTON_PIN);
 
 
 
@@ -37,19 +38,32 @@ void setup(void) {
 long val = 4350;
 uint8_t item = 0;
 
+unsigned long last_encoder_update = 0;
+
 void update(){
 	// read input state
 	encoder_A.update();
 	encoder_B.update();
+	button.update();
 
+	unsigned long now = millis();
 	if(encoder_A.state && !encoder_A.last_state){
-		if(encoder_B.state) menuController.onEncoderRotate(1);
-		else menuController.onEncoderRotate(-1);
+		int multiplier = 1;
+		if(now - last_encoder_update < 25){
+			multiplier = 20;
+		}
+		else if(now - last_encoder_update < 50){
+			multiplier = 10;
+		}
+		last_encoder_update = now;
+
+		if(encoder_B.state) menuController.onEncoderRotate(multiplier);
+		else menuController.onEncoderRotate(-multiplier);
 	}
 
-	// Serial.println(val++);
-
-	if(val > 1000000) val = 0;
+	if(button.state && !button.last_state){
+		menuController.onEncoderClick();
+	}
 }
 
 char c_buffer[10];
