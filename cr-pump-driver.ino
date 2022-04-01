@@ -12,9 +12,9 @@
 
 // Rotary encoder
 
-#define ENCODER_A_PIN 2
-#define ENCODER_B_PIN 3
-#define BUTTON_PIN 4
+#define ENCODER_A_PIN A4
+#define ENCODER_B_PIN A3
+#define BUTTON_PIN A2
 
 DebounceInput encoder_A(ENCODER_A_PIN);
 DebounceInput encoder_B(ENCODER_B_PIN);
@@ -23,9 +23,13 @@ DebounceInput button(BUTTON_PIN);
 
 
 void setup(void) {
+  	button.setup();
+
 	encoder_A.setup();
 	encoder_B.setup();
-	pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+	pinMode(13, OUTPUT);
+	digitalWrite(13, 1);
 	
 	Serial.begin(9600);
 
@@ -57,18 +61,19 @@ void update(){
 		}
 		last_encoder_update = now;
 
-		if(encoder_B.state) menuController.onEncoderRotate(multiplier);
-		else menuController.onEncoderRotate(-multiplier);
+		if(encoder_B.state) menuController.onEncoderRotate(-multiplier);
+		else menuController.onEncoderRotate(multiplier);
 	}
 
 	if(button.state && !button.last_state){
 		menuController.onEncoderClick();
 	}
+
 }
 
 char c_buffer[10];
 
 // display rendering
-void loop(void) {
+void loop(void) {  
 	menuController.render();
 }

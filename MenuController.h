@@ -5,7 +5,9 @@
 
 class MenuController{
 public:
-	MainMenu* pages[1] = {new MainMenu()};
+	MainMenu main_menu;
+	SettingsMenu settings_menu;
+	Menu* pages[2] = {&main_menu, &settings_menu};
 	int current_page = 0;
 
 	void render();

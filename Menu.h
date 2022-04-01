@@ -4,10 +4,10 @@
 
 class Menu{
 public:
-	void render();
-	void onEncoderRotate(int dir);
-	void onEncoderClick();
-	void onPedalClick();
+	virtual void render();
+	virtual void onEncoderRotate(int dir);
+	virtual void onEncoderClick();
+	virtual void onPedalClick();
 };
 
 struct SettingElement{
@@ -29,8 +29,30 @@ public:
 		{"SPEED", 0, 0, 100}
 	};
 
-	void render();
-	void onEncoderRotate(int dir);
-	void onEncoderClick();
-	void onPedalClick();
+	virtual void render();
+	virtual void onEncoderRotate(int dir);
+	virtual void onEncoderClick();
+	virtual void onPedalClick();
 };
+
+class SettingsMenu : public Menu{
+public:
+	int selected_item = 0;
+	bool selected = false;
+
+	SettingElement elements[6] = {
+		{"STOPPING WEIGHT", 0, 0, 1000},
+		{"START ACCELERATION", 0, 0, 100},
+		{"TARE ON START", 0, 0, 1},
+		{"SOUND", 0, 0, 1},
+		{"CALIBRATION", 0, 0, 1},
+		{"SAVE SETTINGS", 0, 0, 1},
+	};
+
+	virtual void render();
+	virtual void onEncoderRotate(int dir);
+	virtual void onEncoderClick();
+	virtual void onPedalClick();
+};
+
+
