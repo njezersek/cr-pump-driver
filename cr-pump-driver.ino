@@ -2,6 +2,7 @@
 #include <TimerOne.h>
 #include "debounce.h"
 #include "MenuController.h"
+#include "Scale.h"
 
 #ifdef U8X8_HAVE_HW_SPI
 #include <SPI.h>
@@ -20,13 +21,13 @@ DebounceInput encoder_A(ENCODER_A_PIN);
 DebounceInput encoder_B(ENCODER_B_PIN);
 DebounceInput button(BUTTON_PIN);
 
-
-
 void setup(void) {
   	button.setup();
 
 	encoder_A.setup();
 	encoder_B.setup();
+
+	Scale::init();
 
 	pinMode(13, OUTPUT);
 	digitalWrite(13, 1);
@@ -49,6 +50,8 @@ void update(){
 	encoder_A.update();
 	encoder_B.update();
 	button.update();
+	float w = Scale::read();
+	Serial.println(w);
 
 	unsigned long now = millis();
 	if(encoder_A.state && !encoder_A.last_state){

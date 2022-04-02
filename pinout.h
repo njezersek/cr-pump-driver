@@ -4,8 +4,8 @@
 #define MCP4921_CS_PIN 10
 
 // weight scale
-#define LOADCELL_DOUT_PIN 2
-#define LOADCELL_SCK_PIN 3
+#define LOADCELL_DOUT_PIN 12
+#define LOADCELL_SCK_PIN 11
 
 // pump control
 #define PUMP_START_PIN 7
